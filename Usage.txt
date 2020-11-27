@@ -1,0 +1,1 @@
+python neural_style/neural_style.py eval --content-image ./images/content-images/J.jpg --model ./saved_models/rain_princess.pth --output-image ./images/output-images/J.jpg --cuda 0

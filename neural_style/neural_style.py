@@ -3,6 +3,7 @@ import os
 import sys
 import time
 import re
+from tqdm import tqdm
 
 import numpy as np
 import torch
@@ -41,7 +42,7 @@ def train(args):
         transforms.Lambda(lambda x: x.mul(255))
     ])
     train_dataset = datasets.ImageFolder(args.dataset, transform)
-    train_loader = DataLoader(train_dataset, batch_size=args.batch_size)
+    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, num_workers=0, pin_memory=True)
 
     transformer = TransformerNet().to(device)
     optimizer = Adam(transformer.parameters(), args.lr)
@@ -60,11 +61,13 @@ def train(args):
     gram_style = [utils.gram_matrix(y) for y in features_style]
 
     for e in range(args.epochs):
+        print("Number of Data : {}".format(len(train_dataset)))
+        print("Number of Batch : {}".format(len(train_loader)))
         transformer.train()
         agg_content_loss = 0.
         agg_style_loss = 0.
         count = 0
-        for batch_id, (x, _) in enumerate(train_loader):
+        for batch_id, (x, _) in tqdm(enumerate(train_loader)):
             n_batch = len(x)
             count += n_batch
             optimizer.zero_grad()
@@ -78,15 +81,22 @@ def train(args):
             features_y = vgg(y)
             features_x = vgg(x)
 
+            # Content Loss
             content_loss = args.content_weight * mse_loss(features_y.relu2_2, features_x.relu2_2)
 
+            # Style Loss
             style_loss = 0.
             for ft_y, gm_s in zip(features_y, gram_style):
                 gm_y = utils.gram_matrix(ft_y)
                 style_loss += mse_loss(gm_y, gm_s[:n_batch, :, :])
             style_loss *= args.style_weight
 
-            total_loss = content_loss + style_loss
+            # Total Variance Loss
+            tv_loss = 1e-7 * (
+                torch.sum(torch.abs(y[:, :, :, :-1] - y[:, :, :, 1:])) + 
+                torch.sum(torch.abs(y[:, :, :-1, :] - y[:, :, 1:, :])))
+
+            total_loss = content_loss + style_loss + tv_loss
             total_loss.backward()
             optimizer.step()
 

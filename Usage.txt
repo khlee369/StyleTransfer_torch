@@ -4,3 +4,4 @@ python neural_style/neural_style.py eval --content-image ./images/content-images
 # train
 python neural_style/neural_style.py train --dataset </path/to/train-dataset> --style-image </path/to/style/image> --save-model-dir </path/to/save-model/folder> --epochs 2 --cuda 1
 python neural_style/neural_style.py train --dataset ./../coco2014/train --style-image ./images/style-images/rain-princess.jpg --save-model-dir ./logs --epochs 2 --cuda 1
+python neural_style/neural_style.py train --dataset ./../coco2014/val --style-image ./images/style-images/rain-princess.jpg --save-model-dir ./logs --epochs 2 --cuda 1

@@ -67,6 +67,7 @@ def train(args):
         transformer.train()
         agg_content_loss = 0.
         agg_style_loss = 0.
+        agg_tv_loss = 0.
         count = 0
         for batch_id, (x, _) in tqdm(enumerate(train_loader)):
             n_batch = len(x)
@@ -103,13 +104,16 @@ def train(args):
 
             agg_content_loss += content_loss.item()
             agg_style_loss += style_loss.item()
+            agg_tv_loss += tv_loss.item()
 
             if (batch_id + 1) % args.log_interval == 0:
-                mesg = "{}\tEpoch {}:\t[{}/{}]\tcontent: {:.6f}\tstyle: {:.6f}\ttotal: {:.6f}".format(
-                    time.ctime(), e + 1, count, len(train_dataset),
+                ctime = datetime.today().strftime('%Y.%m.%d %H:%M')
+                mesg = "{}\tEpoch {}:\t[{}/{}]\tcontent: {:.6f}\tstyle: {:.6f}\ttv: {:.6f}\ttotal: {:.6f}".format(
+                    ctime, e + 1, count, len(train_dataset),
                                   agg_content_loss / (batch_id + 1),
                                   agg_style_loss / (batch_id + 1),
-                                  (agg_content_loss + agg_style_loss) / (batch_id + 1)
+                                  agg_tv_loss / (batch_id + 1),
+                                  (agg_content_loss + agg_style_loss + agg_tv_loss) / (batch_id + 1)
                 )
                 print(mesg)
 
@@ -212,7 +216,7 @@ def main():
                                   help="weight for style-loss, default is 1e10")
     train_arg_parser.add_argument("--lr", type=float, default=1e-3,
                                   help="learning rate, default is 1e-3")
-    train_arg_parser.add_argument("--log-interval", type=int, default=500,
+    train_arg_parser.add_argument("--log-interval", type=int, default=250,
                                   help="number of images after which the training loss is logged, default is 500")
     train_arg_parser.add_argument("--checkpoint-interval", type=int, default=2000,
                                   help="number of batches after which a checkpoint of the trained model will be created")
